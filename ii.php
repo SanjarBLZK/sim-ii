@@ -1,8 +1,10 @@
 <?php
+ini_set('display_errors', 'On');
+error_reporting(E_ALL | E_STRICT);
 /*
-sim-ii.php: 
+ii.php: 
 
-Copyright (C) 2019  VetSim, Cornell University College of Veterinary Medicine Ithaca, NY
+Copyright (C) 2019-2021  VetSim, Cornell University College of Veterinary Medicine Ithaca, NY
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,19 +21,21 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 */
 
 	// ii-php: Instructor interface
-	
+
 	require_once('init.php');
 	
-	$status = adminClass::isUserLoggedIn();
-	if($status === FALSE) {
-		header('location: index.php');
+	if ( ! $noDB )
+	{
+		$status = adminClass::isUserLoggedIn();
+		if($status === FALSE) {
+			header('location: index.php');
+		}
 	}
-	
-	$userRow = adminClass::getUserRowFromSession();
+	$userRow = adminClass::getUserRowFromSession();	
 	$userName = $userRow['UserFirstName'] . " " . $userRow['UserLastName'];
 	$uid = $userRow['UserID'];
 	$sessionID = session_id();
-	
+	  
 	$uploadErrorCode = FILE_NO_ERROR;
 
 	// If Demo user, then we use a temporary directory for Scenarios
@@ -148,11 +152,24 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 				continue;
 			}
 			
+			// does the folder name have any embedded spaces?
+			if( strpos( $scenarioFolder, " " ) !== FALSE ) {
+				$newScenarioFolderName = str_replace( " ", "_", $scenarioFolder );
+				rename( SERVER_ACTIVE_SCENARIOS . $scenarioFolder, SERVER_ACTIVE_SCENARIOS . $newScenarioFolderName );
+				$scenarioFolder = $newScenarioFolderName;
+			}
+			
 			if(file_exists(SERVER_ACTIVE_SCENARIOS . $scenarioFolder . DIRECTORY_SEPARATOR . 'main.xml') === TRUE) {
 				$scenarioHeader = scenarioXML::getScenarioHeaderArray($scenarioFolder . DIRECTORY_SEPARATOR . 'main');
 				$fileName = $scenarioFolder . DIRECTORY_SEPARATOR . 'main';
 				$scenarioHeaderArray = scenarioXML::getScenarioHeaderArray($fileName);
-				$scenarioNameArray[$scenarioHeaderArray['title']['name']] = $scenarioFolder;
+					
+				// add error message for invalid main.xml
+				if( gettype($scenarioHeaderArray) != "array" ) {
+					printf("<span style='color:red;'>Error in $scenarioFolder/main.xml</span>");
+				} else {
+					$scenarioNameArray[$scenarioHeaderArray['title']['name']] = $scenarioFolder;
+				}
 			}
 		}
 	}
@@ -187,11 +204,56 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 		<script type="text/javascript">
 			var uploadErrorCode = <?= $uploadErrorCode; ?>;
 			var userID = <?= $uid ?>;
+			var noDB = <?= $noDB ?>;
+			window.vitalsWindow = 0;
+			
 			document.cookie = "userID="+userID+"; path=/";
 			var isVitalsMonitor = 0;	// Student Display Flag
 			$(document).ready(function() {
+window.name = "WinVetSim II";
+console.log("Window name: " + window.name);
+
 				// hide debrief menu item
 				$('.logout.debrief').hide();
+				
+				if ( noDB )
+				{
+					$("#logout_close").click(function() {
+						if ( confirm("This will close the Simulator Application. Is this what you want to do?" ) )
+						{
+							simmgr.running = 0;
+							var data = {'close': 565}
+							$.ajax({
+								url: BROWSER_CGI + 'simstatus.cgi',
+								type: 'get',
+								dataType: 'json',
+								data: data,
+								success: function(response,  textStatus, jqXHR ) {
+									if ( typeof(response.close) !== 'undefined' && response.close == 565 )
+									{
+										// make sure vitals exists and is open
+										if( typeof( window.vitalsWindow ) === 'object' && !window.vitalsWindow.closed ) {
+											window.vitalsWindow.close();
+										}
+										// make sure diag exists and is open
+										if( typeof( simmgr.diagWindow ) === 'object' && !simmgr.diagWindow.closed ) {
+											simmgr.diagWindow.close();
+										}
+										window.close(); 
+
+									}
+									else
+									{
+										alert("Application Close Failed" );
+									}
+								},
+								error: function( jqXHR,  textStatus,  errorThrown){
+									console.log("error: "+textStatus+" : "+errorThrown );
+								}
+							});		
+						}
+					});
+				}
 				
 				// init menu
 				menu.init();
@@ -278,18 +340,24 @@ console.log(controls['awRR'].increment);
 					alert("Invalid scenario zip file.");
 				}
 			});
+			
+			function burgerTransform(x) {
+				x.classList.toggle("change");
+				$( ".subnav" ).slideToggle();
+			}
+
 		</script>
 	</head>
 	<body>
 		<div id="sitewrapper">
 			<div id="admin-nav">
-				<h1>Open VetSim Instructor Interface - V<?= VERSION_MAJOR . '.' . VERSION_MINOR; ?></h1>
-				<h1 class="welcome-title">Welcome <?= $userName; ?></h1>
+				<h1>Open VetSim Instructor Interface</h1>
+				<!-- <h1>Open VetSim Instructor Interface - V<?= VERSION_MAJOR . '.' . VERSION_MINOR; ?></h1> -->
+				<!-- <h1 class="welcome-title">Welcome <?= $userName; ?></h1> -->
 				<div class="profile-display scenario">
-					Scenario Name: 
+					Scenario: 
 					<span id="scenario-name-display">Default Scenario</span>
-					&nbsp;&nbsp;|&nbsp;&nbsp;Scene Name:&nbsp;<span id="scene-name">Test</span>
-					&nbsp;&nbsp;|&nbsp;&nbsp;Scene ID:&nbsp;<span id="scene-id">1</span>
+					&nbsp;&nbsp;|&nbsp;&nbsp;Scene:&nbsp;<span id="scene-name">Test</span>&nbsp;-&nbsp;<span id="scene-id">1</span>
 				</div>
 				<ul id="main-nav">
 					<!-- <li class="with-sub-nav">
@@ -310,37 +378,43 @@ console.log(controls['awRR'].increment);
 							<li><a href="javascript: void(2);">Settings Another Item</a></li>
 						</ul>
 					</li> -->
-					<li >
+					<!-- <li >
 						<a href="javascript:void(2);" onclick="modal.showUsers();">Users</a>
-					</li>
+					</li> -->
 					<li >
-						<a href="javascript:void(2);" onclick="window.open('vitals.php','temp','resizable');">Vitals</a>
+						<a href="javascript:void(2);" onclick="window.vitalsWindow = window.open('vitals.php','vitals','resizable');">Vitals</a>
 					</li>
-					<li class="tele-sim disabled">
+					<!-- <li class="tele-sim disabled">
 						<a href="javascript:void(2);" onclick="telesim.toggleTeleSim(); return false;">Enable TeleSim</a>
-					</li>
+					</li> -->
 					<li class="menu-events">
-						<a href="javascript:void(2);" onclick="modal.showEvents(); return false;">Events</a>
+						<a href="javascript:void(2);" onclick="modal.showEvents(); return false;">Events (Hot Keys)</a>
 					</li>
-					<li class="logout">
-						<a href="index.php" class="event-link">Logout</a>						
-					</li>
-					<li class="logout debrief">
-						<a href="/sim-player/player.php" class="event-link">Debrief</a>						
-					</li>
-					<li class="logout">
-						<a href="javascript: void(2);" onclick="modal.manageScenarios();" class="event-link" id="scenario-click">Scenarios</a>						
+					<li class="logout burger-div">
+						<div class="burger" onclick="burgerTransform(this)">
+							<div class="bar1"></div>
+							<div class="bar2"></div>
+							<div class="bar3"></div>
+						</div>												
 					</li>
 					<!-- <li class="logout">
 						<a href="../../editor/editor.php"  class="event-link breath-link">Editor</a>						
 					</li> -->
-					<li class="logout">
+					<li class="logout start-comps perm-hotkey">
 						<a href="javascript: void(2);"  class="event-link cpr-link">Start Comps (c)</a>						
 					</li>
-					<li class="logout">
+					<li class="logout manual-breath perm-hotkey">
 						<a href="javascript: void(2);"  class="event-link breath-link">Manual Breath (b)</a>						
 					</li>
 				</ul>
+			</div>
+			<div class="subnav">
+				<div class="subnav-content">
+					<a href="javascript: void(2);" onclick="modal.manageScenarios();" class="event-link" id="scenario-click">Scenarios</a>
+					<a href="javascript: void(2);" onclick="modal.aboutModal();" class="event-link" id="about-click">About</a>
+					<a href="/sim-player/player.php" class="event-link">Debrief</a>	
+					<a href="javascript: void(2);" class="event-link" id="logout_close">Close</a>
+				</div>
 			</div>
 
 			<div id="mannequin" class="clearer float-left ii-border">

@@ -5,7 +5,8 @@ See gpl.html
 */
 	var controls = {
 		controllers: {
-			ip: ""				// controller IP address
+			ip: "",				// controller IP address
+			fwVers: ""
 		},
 		
 		defib: {
@@ -49,7 +50,7 @@ See gpl.html
 				rate = $('.strip-value.new').val();
 				time = $('.transfer-time').val();
 //				controls.heartRate.setHeartRateValue(rate );
-				controls.heartRate.slideBar.slider("refresh");
+				controls.heartRate.slideBar.slider( "value", parseInt( $('.strip-value.new').val() ) );
 				
 				simmgr.sendChange( { 'set:cardiac:rate' : rate, 'set:cardiac:transfer_time' : time } );
 			},
@@ -161,7 +162,7 @@ See gpl.html
 				} else if(newValue > controls.heartRate.maxValue) {
 					$('.strip-value.new').val(controls.heartRate.maxValue);
 				}
-				controls.heartRate.slideBar.slider("refresh");
+				controls.heartRate.slideBar.slider( "value", parseInt( $('.strip-value.new').val() ) );
 			},
 			blankHR: function () {
 				$('#vs-heartRhythm a.display-rate').html('---<span class="vs-upper-label"> bpm</span>');
@@ -296,7 +297,7 @@ See gpl.html
 				time = $('.transfer-time').val();
 				
 				// set controls and update new value
-				controls.awRR.slideBar.slider("refresh");
+				controls.awRR.slideBar.slider( "value", parseInt( $('.strip-value.new').val() ) );
 				simmgr.sendChange( { 'set:respiration:rate' : rate, 'set:respiration:transfer_time' : time } );
 			},
 			
@@ -323,7 +324,7 @@ See gpl.html
 				} else if(newValue > controls.awRR.maxValue) {
 					$('.strip-value.new').val(controls.awRR.maxValue);
 				}
-				controls.awRR.slideBar.slider("refresh");
+				controls.awRR.slideBar.slider( "value", parseInt( $('.strip-value.new').val() ) );
 			}
 		},
 		
@@ -497,7 +498,7 @@ See gpl.html
 				} else if(newValue > controls.SpO2.maxValue) {
 					$('.strip-value.new').val(controls.SpO2.maxValue);
 				}
-				controls.SpO2.slideBar.slider("refresh");
+				controls.SpO2.slideBar.slider( "value", parseFloat( $('.strip-value.new').val() ) );
 			},
 			
 			displayValue: function(){
@@ -534,7 +535,7 @@ See gpl.html
 				} else if(newValue > controls.etCO2.maxValue) {
 					$('.strip-value.new').val(controls.etCO2.maxValue);
 				}
-				controls.etCO2.slideBar.slider("refresh");
+				controls.etCO2.slideBar.slider( "value", parseInt( $('.strip-value.new').val() ) );
 			},
 			
 			displayValue: function() {
@@ -616,15 +617,22 @@ console.log("ETCO2 Display Value - chart.resp.rhythmIndex: " + chart.resp.rhythm
 			},
 			
 			fahrToCent: function( fahrT ) {
-				return ( (fahrT - 32) * 5/9 ).toFixed(1);
+				var fTemp = 0;
+				if( typeof fahrT == "string") {
+					fTemp = parseFloat( fahrT );
+				} else {
+					fTemp = fahrT;
+				}
+				var returnVal = (( fTemp  - 32) * 5/9).toFixed(1);
+				return ( returnVal );
 			},
 			
 			centToFahr: function( centT ) {
-				return ( (centT * 9/5) + 32 ).toFixed(1);
+				return ( ( parseFloat( centT ) * 9/5) + 32 ).toFixed( 1 );
 			},
 			
 			setModalValues: function( TperiUnits ) {				
-				var newTperiVal = parseInt( $('.strip-value.new').val() );
+				var newTperiVal = parseFloat( $('.strip-value.new').val() );
 				if( TperiUnits == 'C' ) {
 					// convert to Centigrade
 					$('h2.modal-section-title').html("Tperi (&deg;C) ");
@@ -636,9 +644,11 @@ console.log("ETCO2 Display Value - chart.resp.rhythmIndex: " + chart.resp.rhythm
 					}
 					
 					$('.strip-value.current').val( controls.Tperi.fahrToCent(controls.Tperi.value) );
-					$('.control-slider-1').attr({
-						'min': controls.Tperi.fahrToCent( controls.Tperi.minValue ),
-						'max': controls.Tperi.fahrToCent( controls.Tperi.maxValue )
+					
+					$('.control-slider-1').slider({
+						'value': parseFloat( $('.strip-value.current').val() ),
+						'min': parseFloat(controls.Tperi.fahrToCent( controls.Tperi.minValue )),
+						'max': parseFloat(controls.Tperi.fahrToCent( controls.Tperi.maxValue ))
 					});
 					
 				} else {
@@ -651,11 +661,14 @@ console.log("ETCO2 Display Value - chart.resp.rhythmIndex: " + chart.resp.rhythm
 						$('.strip-value.new').val( controls.Tperi.centToFahr($('.strip-value.new').val()) );
 					}
 					$('.strip-value.current').val( controls.Tperi.value );
-					$('.control-slider-1').attr({
+					$('.control-slider-1').slider({
+						'value': parseFloat( $('.strip-value.current').val() ),
 						'min': controls.Tperi.minValue,
 						'max': controls.Tperi.maxValue
 					});
+
 				}
+
 			},
 			
 			setValue: function(newValue) {
@@ -686,7 +699,8 @@ console.log("ETCO2 Display Value - chart.resp.rhythmIndex: " + chart.resp.rhythm
 				} else if(newValue > TperiMax) {
 					$('.strip-value.new').val(TperiMax);
 				}
-				controls.Tperi.slideBar.slider("refresh");
+											
+				$('.control-slider-1').slider( "value", parseFloat( $('.strip-value.new').val() ) );
 			},
 			
 			// stored value will always be in Fahrenheit
@@ -833,7 +847,7 @@ console.log("ETCO2 Display Value - chart.resp.rhythmIndex: " + chart.resp.rhythm
 					} else if(newValue > controls.nbp.maxSystolicValue) {
 						$('.strip-value.new.systolic').val(controls.nbp.maxSystolicValue);
 					}
-					controls.nbp.slideBarSystolic.slider("refresh");
+					controls.nbp.slideBarSystolic.slider( "value", parseInt( $('.strip-value.new.systolic').val() ) );
 				} else if(type == 'diastolic') {
 					newValue = parseInt($('.strip-value.new.diastolic').val());
 					if(newValue < controls.nbp.minDiastolicValue || isNaN(newValue) == true) {
@@ -841,7 +855,7 @@ console.log("ETCO2 Display Value - chart.resp.rhythmIndex: " + chart.resp.rhythm
 					} else if(newValue > controls.nbp.maxDiastolicValue) {
 						$('.strip-value.new.diastolic').val(controls.nbp.maxDiastolicValue);
 					}
-					controls.nbp.slideBarDiastolic.slider("refresh");
+					controls.nbp.slideBarDiastolic.slider( "value", parseInt( $('.strip-value.new.diastolic').val() ) );
 				}
 			},
 			
@@ -852,7 +866,7 @@ console.log("ETCO2 Display Value - chart.resp.rhythmIndex: " + chart.resp.rhythm
 				} else if(newValue > controls.heartRate.maxValue) {
 					$('.strip-value.new.linked-hr').val(controls.heartRate.maxValue);
 				}
-				controls.nbp.slideBarLinkedHR.slider("refresh");
+				controls.nbp.slideBarLinkedHR.slider( "value", parseFloat( $('.strip-value.new.linked-hr').val() ) );
 				controls.nbp.reportedHRValue = $('.strip-value.new.linked-hr').val();
 				if(controls.nbp.linkedHR == true) {
 					controls.nbp.previousReportedHRValue = $('.strip-value.new.linked-hr').val();
@@ -918,7 +932,7 @@ console.log("ETCO2 Display Value - chart.resp.rhythmIndex: " + chart.resp.rhythm
 					controls.nbp.reportedHRValue = controls.nbp.previousReportedHRValue;
 				}
 				$('input.strip-value.new.linked-hr').val(controls.nbp.reportedHRValue);
-				controls.nbp.slideBarLinkedHR.slider("refresh");
+				controls.nbp.slideBarLinkedHR.slider( "value", parseInt( $('input.strip-value.new.linked-hr').val() ) );
 				
 				$('input.strip-value.new.linked-hr').prop('disabled', controls.nbp.linkedHR);
 				controls.nbp.slideBarLinkedHR.slider('option', 'disabled', controls.nbp.linkedHR);

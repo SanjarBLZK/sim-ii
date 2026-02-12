@@ -48,11 +48,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 			<input value="0" class="strip-value current float-left" readonly="readonly" disabled="disabled">
 			
 			<!-- old slider -->
-			<!-- <div class="control-slider-1"></div>
-			<input value="0" class="strip-value new"> -->
+			<!-- <div class="control-slider-1"></div> -->
 			
 			<!-- New slider -->
-			<input value="0" class="strip-value new control-slider-1 float-left" data-highlight="true">		
+			<div value="0" class="control-slider-1 float-left" data-highlight="true"></div>
+			<input value="0" class="strip-value new display-new">
 			
 			<a class="control-incr-decr-rate incr-rate float-left" href="javascript: void(2);">>></a>
 			<div class="clearer"></div>

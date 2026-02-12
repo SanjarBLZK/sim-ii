@@ -43,6 +43,7 @@ See gpl.html
 						var content = '<li class="event-priority event-divider">|</li><li class="event-priority">Quick Event Links:</li>';
 						var hotkey = '';
 						response.priority.forEach(function(element, index, event) {
+							hotkey = '';
 							if ( typeof element.hotkey !== 'undefined' && element.hotkey.length != 0 )
 							{
 								hotkey = ' ('+element.hotkey+')';
@@ -50,6 +51,11 @@ See gpl.html
 							content += '<li class="event-priority"><a class="event-link" href="javascript: void(2);" onclick="events.sendPriorityEvent(\'' + element.id + '\');">' + element.title + hotkey + '</a></li>';
 						});
 						$('ul#main-nav li.menu-events').after(content);
+					}
+					
+					// alert if a hotlink has been defined with a (b) or (c)
+					if( response.hotLinkDup == 'true' ) {
+						alert( "Predefined hotkeys (b) or (c) cannot be redefined.  Hotkey definition has been ignored" );
 					}
 					
 					// Set defined hotkeys, if any

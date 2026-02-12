@@ -25,37 +25,50 @@ See gpl.html
 		<link rel="shortcut icon" href="favicon.ico" />		
 
 <?php
-		if(MOBILIZED) {
-//			echo '<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />';
-			echo '<link rel="stylesheet" href="' . BROWSER_CSS . 'jquery.mobile-1.4.5.min.css" />';
-			echo '<link rel="stylesheet" href="' . BROWSER_CSS . 'mobilize.css" />';
+		define( 'LEGACY', FALSE );
+		if( MOBILIZED ) {
+//			echo '<link rel="stylesheet" href="' . BROWSER_CSS . 'jquery.mobile-1.4.5.min.css" />';
+//			echo '<link rel="stylesheet" href="' . BROWSER_CSS . 'mobilize.css" />';
 		}
 ?>
-
-		
 		<link rel="stylesheet" href="<?= BROWSER_CSS; ?>common.css" type="text/css" />
-		<link rel="stylesheet" href="scripts/jquery-ui/1.11.4/jquery-ui.smoothness.min.css">
+<?php
+		if( LEGACY ) {
+			echo '
+				<link rel="stylesheet" href="scripts/jquery-ui/1.11.4/jquery-ui.smoothness.min.css">
+			';
+		} else {
+			echo '
+				<link rel="stylesheet" href="scripts/jquery-ui/1.13.2/jquery-ui.min.css">
+			';
+		}
 
-
-		<!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css"> -->
-
+?>
 		<link rel="stylesheet" href="<?= BROWSER_CSS; ?>controls.css" type="text/css" />
 		<link rel="stylesheet" href="<?= BROWSER_CSS; ?>modal.css" type="text/css" />
 		
-		<?php
-			// php defines in JS
-			require_once(SERVER_INCLUDES."phpDefinesToJs.php");
-			$ts = date("U");
-		?>
-
-		<script type="text/javascript" src="scripts/jquery/2.2.1/jquery.min.js"></script>
-		<script src="scripts/jquery-ui/1.11.4/jquery-ui.js"></script>
+<?php
+		// php defines in JS
+		require_once(SERVER_INCLUDES."phpDefinesToJs.php");
+		$ts = date("U");
+		
+		if( LEGACY ) {
+			echo '
+				<script type="text/javascript" src="scripts/jquery/2.2.1/jquery.min.js"></script>
+				<script src="scripts/jquery-ui/1.11.4/jquery-ui.js"></script>
+			';
+		} else {
+			echo '
+				<script type="text/javascript" src="scripts/jquery/3.6.4/jquery.min.js"></script>
+				<script src="scripts/jquery-ui/1.13.2/jquery-ui.js"></script>
+			';
+		}
+?>
 		<script src="scripts/hotkeys.js"></script>
 		<script type="text/javascript" src="scripts/obs-websocket.js"></script>
-		<!-- <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script> -->
 <?php
-		if(MOBILIZED) {
-			echo '<script src="scripts/jquery.mobile.custom.min.js"></script>';
+		if(MOBILIZED ) {
+//			echo '<script src="scripts/jquery.mobile.custom.min.js"></script>';
 		}
 ?>
 		

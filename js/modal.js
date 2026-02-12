@@ -40,6 +40,33 @@ See gpl.html
 			modal.bindCloseModal();
 		},
 		
+		aboutModal: function() {		
+			var controllerIP = "";
+			if( controls.controllers.ip == "" ) {
+				controllerIP = "No controller detected!"
+			} else {
+				controllerIP = "Controller found at IP Address: " + controls.controllers.ip;			
+			}
+
+			var content = '<div style="text-align: center;"><img src="./images/k9logo.png" width="100px">';
+			content += '<h1>About Open VetSim Canine Simulator</h1></div><br/>';
+			content += 'Release 2.42<br/>';
+			content += 'Instructor Interface Release 2.42-WVS<br/>';
+			content += 'Win Vet Sim Release ' + simmgr.wvsVersion + '<br/>';
+			content += controllerIP + '<br/>';
+			content += 'Controller Firmware Version:  ' + controls.controllers.fwVers + '<br/>';
+			content += '------------------------------------<br/>';
+			content += 'Tech Support: <a href="mailto: tech@k9cprtrainer.dog?subject=Open Vet Sim Tech Request">tech@k9cprtrainer.dog</a><br/>';
+			content += '------------------------------------<br/>';
+			content += 'Documentation can be found at <a href="https://vetsim.net" target="_blank">https://vetsim.net</a><br/>';
+			content += 'Additional information can be found at <a href="https://vetsim.org" target="_blank">https://vetsim.org</a><br/>';
+			content += '------------------------------------<br/>';
+			content += 'All software, hardware, and mechanical designs are released under the GNU open source license.&nbsp&nbsp;';
+			content += '<a href="https://k9cprtrainer.dog" target="_blank">https://www.k9cprtrainer.dog</a><br/>';
+			this.showText(content, 'left');
+			$('#modal .container').width('500px');
+		},
+		
 		heartRate: function() {
 			$.ajax({
 				url: BROWSER_AJAX + 'ajaxGetSingleControlContent.php',
@@ -74,6 +101,14 @@ See gpl.html
 							$('.strip-value.new').val(parseInt($('.strip-value.new').val()) + 1);
 							controls.heartRate.validateNewValue();
 						});
+						
+						// bind change of slider
+						controls.heartRate.slideBar.slider({
+							slide: function( sliderEvent, sliderUI ) {
+								$('.strip-value.new').val( sliderUI.value );
+							}
+						});
+
 					}
 				}
 			});
@@ -110,6 +145,7 @@ See gpl.html
 						
 						// bind controls
 						// add step, min and max
+/*
 						$('.control-slider-1').attr({
 							'step': controls.heartRate.increment,
 							'min': modalMinValue,
@@ -118,14 +154,34 @@ See gpl.html
 			
 						// bind controls
 						controls.heartRate.slideBar = $(".control-slider-1").slider({
-							create: function() {
-								$('.ui-slider').css({
-									'margin': '0'
-								});
-							}
+							'step': controls.heartRate.increment,
+							'min': modalMinValue,
+							'max': controls.heartRate.maxValue,
+							'value': modalValue
 						});
 						
 						$('.strip-value').val(modalValue);
+*/
+							var ecgMin = controls.heartRate.normalMinValue;
+							var ecgValue = controls.heartRate.value;
+
+						// bind controls
+						$('.control-slider-1').val(ecgValue);
+						controls.heartRate.slideBar = $(".control-slider-1").slider({
+							value: ecgValue,
+							min: ecgMin,
+							max: controls.heartRate.maxValue,
+							step: 1,
+							slide: function(event, ui) {
+								$('.strip-value.new').val(ui.value);
+							}
+						});
+						$('.strip-value').val(ecgValue);
+
+
+
+
+
 						
 						// bind apply button
 						$('.modal-button.apply').click(function() {
@@ -186,9 +242,7 @@ See gpl.html
 								}
 							});
 							$('.strip-value').val(ecgValue);
-							controls.heartRate.slideBar.slider("refresh");
 						});						
-						
 					}
 				}
 			});
@@ -227,6 +281,13 @@ See gpl.html
 						$('.control-incr-decr-rate.incr-rate').click(function() {
 							$('.strip-value.new').val(parseInt($('.strip-value.new').val()) + 1);
 							controls.awRR.validateNewValue();
+						});
+						
+						// bind change of slider
+						controls.awRR.slideBar.slider({
+							slide: function( sliderEvent, sliderUI ) {
+								$('.strip-value.new').val( sliderUI.value );
+							}
 						});
 					}
 				}
@@ -270,6 +331,13 @@ See gpl.html
 							$('.strip-value.new').val(parseInt($('.strip-value.new').val()) + 1);
 							controls.SpO2.validateNewValue();
 						});
+						
+						// bind change in slider
+						controls.SpO2.slideBar.slider({
+							slide: function( sliderEvent, sliderUI ) {
+								$('.strip-value.new').val( sliderUI.value );
+							}
+						});
 					}
 				}
 			});
@@ -312,6 +380,14 @@ See gpl.html
 							$('.strip-value.new').val(parseInt($('.strip-value.new').val()) + 1);
 							controls.etCO2.validateNewValue();
 						});
+						
+						// bind change in slider
+						controls.etCO2.slideBar.slider({
+							slide: function( sliderEvent, sliderUI ) {
+								$('.strip-value.new').val( sliderUI.value );
+							}
+						});
+
 					}
 				}
 			});
@@ -331,18 +407,24 @@ See gpl.html
 						
 						modal.initSingleSlider('Tperi');
 
-						$('.strip-value').val(parseFloat(controls.Tperi.value).toFixed(1));
+						parseFloat( $('.strip-value').val( controls.Tperi.value ) ).toFixed( 1 );
 						
 						$('select.tperi-units-select option').attr("selected", false);
 						$('select.tperi-units-select option[value=' + controls.Tperi.currentUnits + ']').attr("selected", true);						
 						controls.Tperi.setModalValues( controls.Tperi.currentUnits );
+						
+						// apply slider response
+						$('.control-slider-1').slider({
+							slide: function( slideEvent, slideUI ) {
+								$( '.strip-value.new' ).val( slideUI.value );
+							}
+						});
 						
 						// bind apply button
 						$('.modal-button.apply').click(function() {
 //							controls.Tperi.value = parseFloat($('.strip-value.new').val());
 //							controls.Tperi.displayValue();
 							localStorage.tperiUnits = controls.Tperi.currentUnits = $('select.tperi-units-select option:selected').val();
-							
 							// convert if necessary
 							var TperiValue = $('.strip-value.new').val();
 							if( localStorage.tperiUnits == 'C' ) {
@@ -356,12 +438,12 @@ See gpl.html
 						});
 						
 						// bind change in new value
-//						$('.strip-value.new').change(controls.Tperi.validateNewValue);
+						$('.strip-value.new').change(controls.Tperi.validateNewValue);
 						
 						// bind increment and decrement
 						$('.control-incr-decr-rate.decr-rate').click(function() {
 							$('.strip-value.new').val( (parseFloat($('.strip-value.new').val()) - controls.Tperi.increment).toFixed(1) );
-							controls.Tperi.validateNewValue();
+							controls.Tperi.validateNewValue();							
 						});
 						$('.control-incr-decr-rate.incr-rate').click(function() {
 							$('.strip-value.new').val( (parseFloat($('.strip-value.new').val()) + controls.Tperi.increment).toFixed(1) );
@@ -444,18 +526,16 @@ See gpl.html
 						
 						// bind controls
 						controls.pulse.slideBar = $("#volume-slider").slider({
-							create: function() {
-								$('.ui-slider').css({
-									'margin': '0 auto'
-								});
-								$(this).css('display', 'none');
-								$('.ui-slider-track').css('margin', '5px 0 0 15px');
-							}
+							min: controls.pulse.volumeMinValue,
+							max: controls.pulse.volumeMaxValue,
+							step: controls.pulse.volumeIncrement,
+							value: controls.pulse[side][pulseType].sensitivity
 						});
 						
-						$('#volume-slider').change(function() {
-//							simmgr.sendChange({'set:cardiac:heart_sound_volume': $(this).val()});
-							$('.volume-setting').html($(this).val());
+						$('#volume-slider').slider({
+							slide: function( slideEvent, slideUI ) {
+								$('.volume-setting').html( slideUI.value );
+							}
 						});
 
 						
@@ -464,7 +544,7 @@ See gpl.html
 							if(side == 'left') {
 								if(pulseType == 'femoral') {
 									simmgr.sendChange({'set:cardiac:left_femoral_pulse_strength': $('input.pulse-strength:checked').val()});
-									simmgr.sendChange({'set:cardiac:left_femoral_pulse_sensitivity': $('.volume-setting').html()});
+									simmgr.sendChange({'set:cardiac:left_femoral_pulse_sensitivity': $('#volume-slider').slider( "value" )});
 								} else {
 									simmgr.sendChange({'set:cardiac:left_dorsal_pulse_strength': $('input.pulse-strength:checked').val()});								
 									simmgr.sendChange({'set:cardiac:left_dorsal_pulse_sensitivity': $('.volume-setting').html()});
@@ -510,6 +590,7 @@ console.dir(params);
 						// init values
 						$('.strip-value.systolic').val(parseInt(controls.nbp.systolicValue));
 						$('.strip-value.diastolic').val(parseInt(controls.nbp.diastolicValue));
+						$('.strip-value.linked-hr').val(parseInt(controls.nbp.reportedHRValue));
 						$('#nbp-control-coupled').prop('checked', controls.nbp.coupled);
 						$('select.read-time option[value=' + controls.nbp.nibp_freq + ']').attr('selected', true);
 						
@@ -522,20 +603,22 @@ console.dir(params);
 						
 						// bind controls
 						controls.nbp.slideBarSystolic = $(".control-slider-1.systolic").slider({
-							create: function() {
-								$('.ui-slider').css({
-									'margin': '0'
-								});
-							}
+							min: controls.nbp.minSystolicValue,
+							max: controls.nbp.maxSystolicValue,
+							step: controls.nbp.increment,
+							value: controls.nbp.systolicValue
 						});
 						
 						// change in systolic value
-						$(".control-slider-1.systolic").change(function() {
-							var slideDifference =  $(this).val() - $('.strip-value.new.systolic').val();
-							$('.strip-value.new.systolic').val($(this).val());
-							controls.nbp.setDiastolicValue(slideDifference);						
+						$(".control-slider-1.systolic").slider({
+							slide: function( slideEvent, slideUI ) {
+								var slideDifference =  slideUI.value - $('.strip-value.new.systolic').val();
+								$('.strip-value.new.systolic').val( slideUI.value );
+								controls.nbp.setDiastolicValue( slideDifference );						
+							}
+							
 						});
-						
+												
 						$(".control-slider-1.diastolic").attr({
 							min: controls.nbp.minDiastolicValue,
 							max: controls.nbp.maxDiastolicValue,
@@ -544,18 +627,19 @@ console.dir(params);
 						
 						// bind controls
 						controls.nbp.slideBarDiastolic = $(".control-slider-1.diastolic").slider({
-							create: function() {
-								$('.ui-slider').css({
-									'margin': '0'
-								});
-							}
+							min: controls.nbp.minDiastolicValue,
+							max: controls.nbp.maxDiastolicValue,
+							step: controls.nbp.increment,
+							value: controls.nbp.diastolicValue
 						});
 						
 						// change in diastolic value
-						$(".control-slider-1.diastolic").change(function() {
-							var slideDifference =  $(this).val() - $('.strip-value.new.diastolic').val();
-							$('.strip-value.new.diastolic').val($(this).val());
-							controls.nbp.setSystolicValue(slideDifference);						
+						$(".control-slider-1.diastolic").slider({
+							slide: function( slideEvent, slideUI ) {
+								var slideDifference =  slideUI.value - $('.strip-value.new.diastolic').val();
+								$('.strip-value.new.diastolic').val( slideUI.value );
+								controls.nbp.setSystolicValue( slideDifference );	
+							}
 						});
 
 						// linked hr
@@ -567,17 +651,19 @@ console.dir(params);
 						
 						// bind controls
 						controls.nbp.slideBarLinkedHR = $(".control-slider-1.linked-hr").slider({
-							create: function() {
-								$('.ui-slider').css({
-									'margin': '0'
-								});
-							}
+							min: controls.heartRate.minValue,
+							max: controls.heartRate.maxValue,
+							step: controls.heartRate.increment,
+							value: controls.nbp.reportedHRValue
 						});
 						
 						// change in linked hr value value
-						$(".control-slider-1.linked-hr").change(function() {
-							var slideDifference =  $(this).val() - $('.strip-value.new.linked-hr').val();
-							controls.nbp.previousReportedHRValue = $(this).val();
+						$(".control-slider-1.linked-hr").slider({
+							slide: function( slideEvent, slideUI ) {
+								var slideDifference =  slideUI.value - $('.strip-value.new.linked-hr').val();
+								controls.nbp.previousReportedHRValue = slideUI.value;
+								$('.strip-value.new.linked-hr').val( slideUI.value );
+							}
 						});
 						
 						// set disabled linkd hr control
@@ -776,20 +862,18 @@ console.dir(params);
 						
 						// bind controls
 						controls.vocals.slideBar = $("#volume-slider").slider({
-							create: function() {
-								$('.ui-slider').css({
-									'margin': '0'
-								});
-								$(this).css('display', 'none');
-								$('.ui-slider-track').css('margin', '5px 0 0 15px');
-							}
+							'min': controls.vocals.minValue,
+							'max': controls.vocals.maxValue,
+							'step': controls.vocals.increment,
+							'value': controls.vocals.value
 						});
 						
-						$('#volume-slider').change(function() {
-							$('.volume-setting').html($(this).val());
-							simmgr.sendChange({'set:vocals:volume': $(this).val()});								
+						$('#volume-slider').slider({
+							slide: function( slideEvent, slideUI ) {
+								$('.volume-setting').html( slideUI.value );
+								simmgr.sendChange({'set:vocals:volume': slideUI.value });
+							}
 						});
-
 						
 						// mute button
 						$('#mute-volume').prop('checked', controls.vocals.mute);
@@ -882,7 +966,7 @@ console.dir(params);
 						$('button.apply').click(function() {
 							simmgr.sendChange({'set:respiration:left_lung_sound_mute': (controls.leftLung.mute == true) ? 1 : 0});						
 							simmgr.sendChange({'set:respiration:left_lung_sound': $('#sound-select').children('option:selected').val()});												
-							simmgr.sendChange({'set:respiration:left_lung_sound_volume': $('#volume-slider').val()});
+							simmgr.sendChange({'set:respiration:left_lung_sound_volume': $('#volume-slider').slider("value")});
 							modal.closeModal();
 						});
 						
@@ -939,7 +1023,7 @@ console.dir(params);
 						$('button.apply').click(function() {
 							simmgr.sendChange({'set:respiration:right_lung_sound_mute': (controls.rightLung.mute == true) ? 1 : 0});						
 							simmgr.sendChange({'set:respiration:right_lung_sound': $('#sound-select').children('option:selected').val()});												
-							simmgr.sendChange({'set:respiration:right_lung_sound_volume': $('#volume-slider').val()});
+							simmgr.sendChange({'set:respiration:right_lung_sound_volume': $('#volume-slider').slider("value")});
 							modal.closeModal();
 						});
 						
@@ -976,18 +1060,16 @@ console.dir(params);
 						
 						// bind controls
 						controls.heartSound.slideBar = $("#volume-slider").slider({
-							create: function() {
-								$('.ui-slider').css({
-									'margin': '0'
-								});
-								$(this).css('display', 'none');
-								$('.ui-slider-track').css('margin', '5px 0 0 15px');
-							}
+							min: controls.heartSound.minValue,
+							max: controls.heartSound.maxValue,
+							step: controls.heartSound.increment,
+							value: controls.heartSound.value
 						});
 						
-						$('#volume-slider').change(function() {
-//							simmgr.sendChange({'set:cardiac:heart_sound_volume': $(this).val()});
-							$('.volume-setting').html($(this).val());
+						$('#volume-slider').slider({
+							slide: function( slideEvent, slideUI ) {
+								$('.volume-setting').html( slideUI.value );
+							}
 						});
 						
 						// mute button
@@ -1015,7 +1097,7 @@ console.dir(params);
 						
 						// bind change to apply button
 						$('button.apply').click(function() {
-							simmgr.sendChange({'set:cardiac:heart_sound_volume': $('#volume-slider').val()});
+							simmgr.sendChange({'set:cardiac:heart_sound_volume': $('#volume-slider').slider("value")});
 							simmgr.sendChange({'set:cardiac:heart_sound_mute': (controls.heartSound.mute == true) ? 1 : 0});
 							simmgr.sendChange({'set:cardiac:heart_sound': $('#sound-select').children('option:selected').val()});
 							modal.closeModal();
@@ -1058,7 +1140,7 @@ console.dir(params);
 
 		showEvents: function() {
 			var response = {
-				html: '<h1 id="user-table-title">Event Library</h1>' + 
+				html: '<h1 id="user-table-title">Event Library (Assigned Hot Key)</h1>' + 
 										'<hr / class="modal-divider">' +
 										'<div class="control-modal-div">' +
 											$('#event-library').html() +
@@ -1180,13 +1262,15 @@ console.dir(params);
 				controlType = 'awRR';
 			}
 			
+			
+			var initValue = 0;
 			// if awrr then use modal rate
 			if(controlType == 'awRR') {
 				// set value
-				$('.control-slider-1').val(controls.awRR.modalRate);
+				initValue = controls.awRR.modalRate;
 			} else {
 				// set value
-				$('.control-slider-1').val( controls[controlType].value );				
+				initValue = controls[controlType].value;				
 			}
 			
 			// set min and max
@@ -1198,11 +1282,10 @@ console.dir(params);
 						
 			// bind controls
 			controls[controlType].slideBar = $(".control-slider-1").slider({
-				create: function() {
-					$('.ui-slider').css({
-						'margin': '0'
-					});
-				}
+				'step': controls[controlType].increment,
+				'min': controls[controlType].minValue,
+				'max': controls[controlType].maxValue,
+				'value': initValue
 			});
 		}, 
 		
@@ -1224,23 +1307,16 @@ console.dir(params);
 			
 			// bind controls
 			controls[lungSelect + 'Lung'].slideBar = $("#volume-slider").slider({
-				create: function() {
-					$('.ui-slider').css({
-						'margin': '0'
-					});
-					$(this).css('display', 'none');
-					$('.ui-slider-track').css('margin', '5px 0 0 15px');
-				}
+				'min': controls[lungSelect + 'Lung'].minValue,
+				'max': controls[lungSelect + 'Lung'].maxValue,
+				'step': controls[lungSelect + 'Lung'].increment,
+				'value': controls[lungSelect + 'Lung'].value
 			});
 			
-			$('#volume-slider').change(function() {
-				if(lungSelect == 'left') {
-//					simmgr.sendChange({'set:respiration:left_lung_sound_volume': $(this).val()});
-				} else if(lungSelect == 'right') {
-//					simmgr.sendChange({'set:respiration:right_lung_sound_volume': $(this).val()});
+			$('#volume-slider').slider({
+				slide: function( slideEvent, slideUI ) {
+					$('.volume-setting').html( slideUI.value );
 				}
-				$('.volume-setting').html($(this).val());
 			});
-
 		}
 	}

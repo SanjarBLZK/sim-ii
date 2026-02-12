@@ -4,6 +4,9 @@ sim-ii: Copyright (C) 2019  VetSim, Cornell University College of Veterinary Med
 
 See gpl.html
 */
+
+//	define("BROWSER_SCENARIOS", ".." . DIR_SEP . "scenarios" . DIR_SEP);
+
 ?>
 			<script type="text/javascript">
 				var BROWSER_AJAX = "<?= BROWSER_AJAX; ?>";
@@ -11,7 +14,7 @@ See gpl.html
 				var BROWSER_VOCALS = "<?= BROWSER_VOCALS; ?>";
 				var BROWSER_PROFILES_IMAGES = "<?= BROWSER_PROFILES_IMAGES; ?>";
 				var BROWSER_CGI = "<?= BROWSER_CGI; ?>";
-				var BROWSER_SCENARIOS = "<?= BROWSER_ACTIVE_SCENARIOS; ?>";
+				var BROWSER_SCENARIOS = "<?= BROWSER_SCENARIOS; ?>";
 				var BROWSER_SCENARIOS_IMAGES = BROWSER_SCENARIOS+"images/";
 				var BROWSER_SCENARIOS_MEDIA = BROWSER_SCENARIOS+"media/";
 				var BROWSER_SCENARIOS_VOCALS = BROWSER_SCENARIOS+"vocals/";

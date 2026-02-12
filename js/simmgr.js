@@ -23,12 +23,16 @@ var simmgr = {
 	pulseCountVpc: 0,
 	quickInterval : 40,
 	statusInterval : 500,
+	longStatusInterval : 500,
 	running : 0,
 	audioPlayStarted : 0,
 	mediaPlayStarted : 0,
 	timeStamp: 0,
 	cardiacResponse: {},
 	respResponse: {},
+	timeCount: 0,
+	ctrlWindow: {},
+	wvsVersion: 0,
 	
 	init : function() {
 		console.log("simmgr: init" );
@@ -75,15 +79,20 @@ var simmgr = {
 	},
 	
 	getQuickStatus : function () {
+		if ( simmgr.running < 1 )
+		{
+			return;
+		}
 		// get unique time stamp
 		simmgr.timeStamp = new Date().getTime();
-		
+		//console.log(BROWSER_CGI + "simstatus.cgi  quick" );
 		$.ajax({
 			url: BROWSER_CGI + 'simstatus.cgi',
 			type: 'get',
 			dataType: 'json',
 			data: { qstat : simmgr.timeStamp },
 			success: function(response,  textStatus, jqXHR ) {
+				
 				if ( response.respiration.breathCount != simmgr.breathCount )
 				{
 					simmgr.breathCount = response.respiration.breathCount;
@@ -121,6 +130,14 @@ console.log('defib: here');
 					chart.ekg.rhythmIndex = controls.heartRhythm.currentRhythm;
 					chart.ekg.length = chart.ekg.rhythm[chart.ekg.rhythmIndex][chart.ekg.rateIndex].length;
 				}
+				
+				if( simmgr.timeCount > 4 ) {
+					const timeOfDay = new Date();
+					$('#clock').html( timeOfDay.toLocaleTimeString("en-GB") );
+					simmgr.timeCount = 0;
+				}
+				simmgr.timeCount++;
+
 
 			},
 
@@ -137,15 +154,19 @@ console.log('defib: here');
 	},
 	
 	getStatus : function () {
+		if ( simmgr.running < 1 )
+		{
+			return;
+		}
 		// get unique time stamp
 		simmgr.timeStamp = new Date().getTime();
-			
 		$.ajax({
 			url: BROWSER_CGI + 'simstatus.cgi',
 			type: 'get',
 			dataType: 'json',
 			data: { status: simmgr.timeStamp },
 			success: function(response,  textStatus, jqXHR ) {
+				//console.log("status returns length: ", response.length );
 				if ( simmgr.isLocalDisplay() )
 				{
 /*
@@ -311,7 +332,7 @@ console.log('defib: here');
 					if(typeof(response.cardiac.heart_sound) != "undefined") {
 						controls.heartSound.soundName = response.cardiac.heart_sound;
 						
-						if ( simmgr.isTeleSim() == true && typeof(simsound) != 'undefined' )
+						if ( typeof(simsound) != 'undefined' )
 						{
 							simsound.lookupHeartSound();
 						}
@@ -511,6 +532,11 @@ console.log('defib: here');
 					controls.Tperi.displayValue();
 				}
 				
+				// WVS Version
+				if(typeof(response.general.wvs_version) != "undefined") {
+					simmgr.wvsVersion = response.general.wvs_version;
+				}
+				
 				// telesim
 				if(typeof(response.telesim) != "undefined" ) {
 /*					if( response.telesim.enable != localStorage.telesim && profile.isVitalsMonitor ) {
@@ -531,14 +557,17 @@ console.log('defib: here');
 //console.dir(response.telesim[0]);
 //console.log('Next 1: ' + telesim.imageNext[1]);
 //console.dir(response.telesim[1]);
-					if( response.telesim[0].next != telesim.imageNext[0] && typeof telesim.imageList[0] != "undefined" ) {
-						telesim.imageNext[0] = response.telesim[0].next;
-						telesim.processTelesimCommand( response.telesim, 0 );
-					}
-					
-					if( response.telesim[1].next != telesim.imageNext[1] && typeof telesim.imageList[1] != "undefined" ) {
-						telesim.imageNext[1] = response.telesim[1].next;
-						telesim.processTelesimCommand( response.telesim, 1 );
+					if ( typeof(response.telesim[0]) !== 'undefined' )
+					{
+						if( response.telesim[0].next != telesim.imageNext[0] && typeof telesim.imageList[0] != "undefined" ) {
+							telesim.imageNext[0] = response.telesim[0].next;
+							telesim.processTelesimCommand( response.telesim, 0 );
+						}
+						
+						if( response.telesim[1].next != telesim.imageNext[1] && typeof telesim.imageList[1] != "undefined" ) {
+							telesim.imageNext[1] = response.telesim[1].next;
+							telesim.processTelesimCommand( response.telesim, 1 );
+						}
 					}
 					
 				}
@@ -748,7 +777,7 @@ console.log('defib: here');
 					}
 
 					// etco2
-					if (typeof(response.respiration.etco2) != "undefined") {
+					if (typeof(response.respiration.etco2) != "undefined" && ( controls.manualRespiration.inProgress == false) ) {
 						var etCO2Rate = response.respiration.etco2;
 						if(etCO2Rate != controls.etCO2.value) {
 							controls.etCO2.changeInProgressStatus = ETCO2_NEW_VALUE_ENTERED;
@@ -923,6 +952,11 @@ if( profile.isVitalsMonitor ) {
 					console.log("no respiration" );
 				}
 				/************ scenario **************/
+				// check for scenario parse error
+				if( typeof(response.scenario.error_message) != "undefined" ) {
+					alert(response.scenario.error_message);
+				}
+				
 				if( ( typeof(response.scenario) != '"undefined"' )  ){
 					if(typeof(response.scenario.runtimeScenario) != "undefined" ) {
 						$('#scenario-running-time').html(response.scenario.runtimeScenario);
@@ -975,12 +1009,6 @@ console.log("New scenario state RUNNING");
 									break;
 							}
 						}
-						
-						// update clock
-						if( newScenarioState == 'RUNNING' ) {
-							$('#clock').html( response.scenario.clockDisplay );
-						}
-
 					}
 					
 					// scenario selection
@@ -1140,11 +1168,29 @@ console.log("New scenario state RUNNING");
 					}
 					else
 					{
-						$('#controller-ip').html('Controller found at IP address:<br>');
+						var str = "Controller found at IP address:<br>";
 						jQuery.each(response.controllers, function(){
-							var str = "<a href='http://"+this+"'>"+this+"</a><br>";
-							$('#controller-ip').append(str);
+							str += '<a href="javascript:void(0);" onClick=PopupCenter(\'http://'+this+'\',\'ctlStatus'+this+'\',\'448\',\'448\'); return false;">'+this+'</a><br>';
+									   
 						});
+						$('#controller-ip').html(str);
+						
+						// call fetch version
+						$.ajax({
+							url: '../sim-ii/ajax/ajaxGetCntrlStat.php',
+							type: 'get',
+							dataType: 'json',
+							data: { ip : controls.controllers.ip },
+							success: function(response,  textStatus, jqXHR ) {
+								if( response.ver != "no data" && response.ver != 'failed' ) {
+									controls.controllers.fwVers = response.ver;
+								} else {
+									controls.controllers.fwVers = "Controller not found";
+								}
+							}
+						});
+
+						
 					}
 				}
 				/************ auscultation **************/
@@ -1159,10 +1205,24 @@ console.log("New scenario state RUNNING");
 						telesim.setAuscultation( coord );
 					}
 				}
+				if ( simmgr.running < 1 )
+				{
+					simmgr.running = 1;
+					clearTimeout(simmgr.quickTimer );
+					clearTimeout(simmgr.statusTimer );
+					simmgr.quickTimer = setTimeout(function() { simmgr.getQuickStatus(); }, simmgr.quickInterval );
+					simmgr.statusTimer = setTimeout(function() { simmgr.getStatus(); }, simmgr.statusInterval );
+				}
 			},
 
 			error: function( jqXHR,  textStatus,  errorThrown){
-				console.log("error: "+textStatus+" : "+errorThrown );
+				console.log("AJAX error: ", textStatus, errorThrown );
+				if ( textStatus == "error" )
+				{
+					simmgr.running = -1;
+					$(".welcome-title").html("The Server is not responding" ).css({'color':'red'});
+					simmgr.statusTimer = setTimeout(function() { simmgr.getStatus(); }, simmgr.longStatusInterval );
+				}
 			},
 			complete: function(jqXHR,  textStatus ){
 				if ( simmgr.running == 1 )
@@ -1187,13 +1247,16 @@ console.log("New scenario state RUNNING");
 	
 	// Generic routine to change Instructor parameters. 'data' is an array of parameters and values
 	sendChange : function (data ) {
+//		if ( simmgr.running < 1)
+//		{
+//			return;
+//		}
 		$.ajax({
 			url: BROWSER_CGI + 'simstatus.cgi',
 			type: 'get',
 			dataType: 'json',
 			data: data,
 			success: function(response,  textStatus, jqXHR ) {
-				
 			},
 			error: function( jqXHR,  textStatus,  errorThrown){
 				console.log("error: "+textStatus+" : "+errorThrown );
@@ -1203,6 +1266,11 @@ console.log("New scenario state RUNNING");
 	
 	// PHP call to maintain login
 	tapHost : function ( ) {
+		
+		if ( simmgr.running < 1 )
+		{
+			return;
+		}
 		$.ajax({
 			url: BROWSER_AJAX + 'ajaxTap.php',
 			type: 'post',
@@ -1250,3 +1318,25 @@ console.log("New scenario state RUNNING");
 		}
 	}
 }
+
+// pop up center for controller IP
+// From http://www.xtf.dk/2011/08/center-new-popup-window-even-on.html
+function PopupCenter(url, title, w, h) {  
+    // Fixes dual-screen position                         Most browsers      Firefox  
+    var dualScreenLeft = window.screenLeft != undefined ? window.screenLeft : screen.left;  
+    var dualScreenTop = window.screenTop != undefined ? window.screenTop : screen.top;  
+              
+    width = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;  
+    height = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;  
+              
+    var left = ((width / 2) - (w / 2)) + dualScreenLeft;  
+    var top = ((height / 2) - (h / 2)) + dualScreenTop; 
+    simmgr.diagWindow = window.open(url, 'diag', 'width=' + w + ', height=' + h + ', top=' + top + ', left=' + left); 
+  
+    // Puts focus on the newWindow  
+    if (window.focus) {  
+        simmgr.diagWindow.focus();
+    }
+}
+
+
